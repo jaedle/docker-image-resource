@@ -27,6 +27,11 @@ resources:
       repository: jaedle/smoke-test-image
       username: ((docker-username))
       password: ((docker-password))
+      remote_docker:
+        host: ((remote-docker-host))
+        ssh_key: ((remote-docker-ssh-key))
+
+
 
 jobs:
   - name: build

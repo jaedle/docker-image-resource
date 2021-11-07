@@ -35,6 +35,9 @@ client_certs=$(jq -r '.source.client_certs // []' < $payload)
 max_concurrent_downloads=$(jq -r '.source.max_concurrent_downloads // 3' < $payload)
 max_concurrent_uploads=$(jq -r '.source.max_concurrent_uploads // 3' < $payload)
 
+remote_docker_host=$(jq -r '.source.remote_docker.host // ""' < $payload)
+remote_docker_ssh_key=$(jq -r '.source.remote_docker.ssh_key // ""' < $payload)
+
 export AWS_ACCESS_KEY_ID=$(jq -r '.source.aws_access_key_id // ""' < $payload)
 export AWS_SECRET_ACCESS_KEY=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
 export AWS_SESSION_TOKEN=$(jq -r '.source.aws_session_token // ""' < $payload)
@@ -47,11 +50,24 @@ fi
 
 certs_to_file "$ca_certs"
 set_client_certs "$client_certs"
-start_docker \
-	"${max_concurrent_downloads}" \
-	"${max_concurrent_uploads}" \
-	"$insecure_registries" \
-	"$registry_mirror"
+
+if [[ -z "$remote_docker_host" ]]; then
+  start_docker \
+  	"${max_concurrent_downloads}" \
+  	"${max_concurrent_uploads}" \
+  	"$insecure_registries" \
+  	"$registry_mirror"
+else
+  trap "ssh-agent -k" exit
+  eval "$(ssh-agent -s)"
+  echo "$remote_docker_ssh_key" > host_ssh_key
+  chmod 0600 host_ssh_key
+  ssh-add host_ssh_key
+  ssh -o "StrictHostKeyChecking no" "$remote_docker_host" true
+  export DOCKER_HOST="$remote_docker_host"
+  docker info
+fi
+
 log_in "$username" "$password" "$registry"
 
 tag_source=$(jq -r '.source.tag // "latest"' < $payload)
