@@ -1,4 +1,11 @@
 ---
+resource_types:
+  - name: docker-image-resource
+    type: custom-docker-image-resource-type
+    source:
+      repository: jaedle/custom-docker-image-resource
+      tag: latest
+
 resources:
   - name: source-code
     type: git
@@ -13,9 +20,15 @@ resources:
       username: ((docker-username))
       password: ((docker-password))
 
+  - name: smoke-test-image
+    type: docker-image
+    source:
+      repository: jaedle/smoke-test-image
+      username: ((docker-username))
+      password: ((docker-password))
+
 jobs:
-  - name: job
-    public: true
+  - name: build
     plan:
       - get: source-code
         trigger: true
@@ -23,3 +36,10 @@ jobs:
         params:
           build: source-code/
           dockerfile: source-code/dockerfiles/alpine/Dockerfile
+
+  - name: smoke-test
+    plan:
+      - get: source-code
+      - put: smoke-test-image
+        params:
+          build: source-code/dockerfiles/smoke-test-image
