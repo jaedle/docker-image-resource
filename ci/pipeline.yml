@@ -1,7 +1,8 @@
 ---
 resource_types:
-  - name: docker-image-resource
-    type: custom-docker-image-resource-type
+  - name: custom-docker-image-resource
+    type: docker-image
+    privileged: true
     source:
       repository: jaedle/custom-docker-image-resource
       tag: latest
@@ -21,7 +22,7 @@ resources:
       password: ((docker-password))
 
   - name: smoke-test-image
-    type: docker-image
+    type: custom-docker-image-resource
     source:
       repository: jaedle/smoke-test-image
       username: ((docker-username))
