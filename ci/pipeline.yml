@@ -1,14 +1,25 @@
 ---
+resources:
+  - name: source-code
+    type: git
+    source:
+      uri: git@github.com:jaedle/docker-image-resource.git
+      private_key: ((ci-key))
+
+  - name: custom-docker-image-resource
+    type: docker-image
+    source:
+      repository: jaedle/custom-docker-image-resource
+      username: ((docker-username))
+      password: ((docker-password))
+
 jobs:
   - name: job
     public: true
     plan:
-      - task: simple-task
-        config:
-          platform: linux
-          image_resource:
-            type: registry-image
-            source: { repository: busybox }
-          run:
-            path: echo
-            args: ["Hello world!"]
+      - get: source-code
+        trigger: true
+      - put: custom-docker-image-resource
+        params:
+          build: source-code/
+          dockerfile: source-code/dockerfiles/alpine/Dockerfile
